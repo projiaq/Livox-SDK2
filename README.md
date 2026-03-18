@@ -2,7 +2,7 @@
 
 Livox SDK2 is a software development kit designed for all Livox lidars such as HAP and Mid-360. It is developed based on C/C++ following Livox SDK2 Communication Protocol, and provides easy-to-use C style APIs. With the Livox SDK2, users can quickly connect to the Livox Lidars and receive point cloud data.
 
-Livox SDK2 consists of [Livox SDK2 core code](sdk_core/), [Livox SDK2 APIs](include/livox_lidar_api.h) and three [samples](samples/).
+Livox SDK2 consists of [Livox SDK2 core code](sdk_core/), [Livox SDK2 APIs](include/livox_lidar_api.h) and several [samples](samples/).
 
 ## Livox SDK2 API
 
@@ -146,7 +146,7 @@ After building, the sample executables are generated under:
 
 # 3. Run the Samples
 
-Livox SDK2 includes three samples, which are "livox_lidar_quick_start", "logger" and "multi_lidars_upgrade".
+Livox SDK2 includes several samples, such as "livox_lidar_quick_start", "logger", "multi_lidars_upgrade" and "point_cloud_recorder".
 
 ## 3.1 Livox lidar quick start sample
 
@@ -236,6 +236,35 @@ Copy the config file '**Livox-SDK2\\samples\\multi_lidars_upgrade\\[config file]
 
 **Note** : 
 1. [config file] in the command above represents the config file name, you can choose different config file depends on your needs.
+
+## 3.4 Point cloud recorder sample
+
+The `point_cloud_recorder` sample saves point cloud data to both `bin` and `csv` files.
+Each lidar creates one `bin` file and one `csv` file per minute under the specified output directory.
+
+### in Ubuntu 20.04
+
+```shell
+$ cd samples/point_cloud_recorder && ./point_cloud_recorder ./mid360_config.json ./output
+```
+
+### in Windows 10
+
+After compiling the Livox SDK2, you can find `point_cloud_recorder.exe` in:
+`Livox-SDK2\\build\\samples\\point_cloud_recorder\\Debug(or Release)\\`
+
+Copy the config file in `Livox-SDK2\\samples\\point_cloud_recorder\\` into the executable directory, then run:
+
+```cmd
+> point_cloud_recorder.exe [config file] [output dir]
+```
+
+The program creates:
+
+* `[output dir]\\bin\\`
+* `[output dir]\\csv\\`
+
+Press `Ctrl + C` to stop recording.
 
 # 4. Config file
 ## 4.1 Basic Configuration
