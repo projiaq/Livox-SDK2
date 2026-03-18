@@ -137,6 +137,17 @@ target_sources(${SDK_LIBRARY_SHARED}
         ${LIVOX_SOURCES}
         )
 
+if (WIN32)
+  target_link_libraries(${SDK_LIBRARY_STATIC}
+        PUBLIC
+        ws2_32
+        iphlpapi)
+  target_link_libraries(${SDK_LIBRARY_SHARED}
+        PUBLIC
+        ws2_32
+        iphlpapi)
+endif()
+
 install(TARGETS ${SDK_LIBRARY_STATIC} ${SDK_LIBRARY_SHARED}
         PUBLIC_HEADER DESTINATION include
         ARCHIVE DESTINATION lib

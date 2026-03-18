@@ -104,6 +104,45 @@ $ sudo rm -rf /usr/local/include/livox_lidar_*
 
 You can now compile the Livox-SDK2 in Visual Studio 2019.
 
+## 2.4 Instruction for Windows without Visual Studio
+
+You can also build this project on Windows with **MinGW-w64 + Ninja + CMake**.
+
+1. Dependencies:
+
+* [CMake 3.0.0+](https://cmake.org/)
+* [Ninja](https://ninja-build.org/)
+* MinGW-w64 g++ with C++11 support
+
+2. Check the toolchain:
+
+```cmd
+> cmake --version
+> ninja --version
+> g++ --version
+```
+
+3. Generate build files:
+
+```cmd
+> git clone https://github.com/Livox-SDK/Livox-SDK2.git
+> cd Livox-SDK2
+> md build-mingw && cd build-mingw
+> cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+```
+
+4. Compile:
+
+```cmd
+> cmake --build . -j 4
+```
+
+After building, the sample executables are generated under:
+
+* `build-mingw\samples\livox_lidar_quick_start\livox_lidar_quick_start.exe`
+* `build-mingw\samples\logger\logger.exe`
+* `build-mingw\samples\multi_lidars_upgrade\multi_lidars_upgrade.exe`
+
 
 # 3. Run the Samples
 
