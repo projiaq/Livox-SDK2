@@ -24,6 +24,7 @@
 
 #include "livox_lidar_api.h"
 #include "livox_lidar_def.h"
+#include "data_handler/data_handler.h"
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -281,6 +282,7 @@ struct PacketFrame {
   uint8_t dev_type;
   uint64_t host_timestamp_ns;
   uint64_t lidar_timestamp;
+  uint32_t recv_size;
   std::vector<uint8_t> raw_packet;
 };
 
@@ -341,21 +343,16 @@ class PointCloudRecorder {
     device_meta_[handle] = meta;
   }
 
-  void PushPointPacket(uint32_t handle, uint8_t dev_type, LivoxLidarEthernetPacket* packet) {
+  void PushPointPacket(uint32_t handle, uint8_t dev_type, LivoxLidarEthernetPacket* packet, uint32_t raw_size) {
     if (packet == nullptr || packet->data_type == kLivoxLidarImuData) {
       return;
     }
 
-    const size_t packet_size = static_cast<size_t>(packet->length);
+    const size_t packet_size = static_cast<size_t>(raw_size);
     const size_t header_size = offsetof(LivoxLidarEthernetPacket, data);
     const size_t point_size = GetPointSize(packet->data_type);
 
     if (packet_size < header_size || point_size == 0) {
-      return;
-    }
-
-    const size_t min_required_size = header_size + point_size * static_cast<size_t>(packet->dot_num);
-    if (packet_size < min_required_size) {
       return;
     }
 
@@ -364,6 +361,7 @@ class PointCloudRecorder {
     frame.dev_type = dev_type;
     frame.host_timestamp_ns = GetCurrentTimeNs();
     frame.lidar_timestamp = ParseLidarTimestamp(packet->timestamp);
+    frame.recv_size = raw_size;
     frame.raw_packet.resize(packet_size);
     std::memcpy(frame.raw_packet.data(), packet, packet_size);
 
@@ -456,7 +454,7 @@ class PointCloudRecorder {
 
     if (writers.csv_stream.is_open()) {
       writers.csv_stream
-          << "host_timestamp_ns,lidar_timestamp,handle,lidar_ip,sn,dev_type,data_type,"
+          << "host_timestamp_ns,lidar_timestamp,recv_size,handle,lidar_ip,sn,dev_type,data_type,"
           << "frame_cnt,udp_cnt,point_index,x,y,z,depth,theta,phi,reflectivity,tag\n";
     }
 
@@ -484,7 +482,7 @@ class PointCloudRecorder {
     std::memset(&header, 0, sizeof(header));
     std::memcpy(header.magic, "LIVOXPC", 7);
     header.header_size = static_cast<uint32_t>(sizeof(header));
-    header.packet_size = static_cast<uint32_t>(frame.raw_packet.size());
+    header.packet_size = frame.recv_size;
     header.handle = frame.handle;
     header.dev_type = frame.dev_type;
     header.data_type = packet->data_type;
@@ -508,6 +506,15 @@ class PointCloudRecorder {
       return;
     }
 
+    const size_t header_size = offsetof(LivoxLidarEthernetPacket, data);
+    const size_t point_size = GetPointSize(packet->data_type);
+    const size_t declared_size = static_cast<size_t>(packet->length);
+    const size_t point_area_size = point_size * static_cast<size_t>(packet->dot_num);
+    if (point_size == 0 || declared_size < header_size || frame.raw_packet.size() < declared_size ||
+        declared_size < header_size + point_area_size) {
+      return;
+    }
+
     const uint8_t* point_data = packet->data;
     if (packet->data_type == kLivoxLidarCartesianCoordinateHighData) {
       const LivoxLidarCartesianHighRawPoint* points =
@@ -515,6 +522,7 @@ class PointCloudRecorder {
       for (uint32_t i = 0; i < packet->dot_num; ++i) {
         stream << frame.host_timestamp_ns << ','
                << frame.lidar_timestamp << ','
+               << frame.recv_size << ','
                << frame.handle << ','
                << meta.lidar_ip << ','
                << meta.sn << ','
@@ -541,6 +549,7 @@ class PointCloudRecorder {
       for (uint32_t i = 0; i < packet->dot_num; ++i) {
         stream << frame.host_timestamp_ns << ','
                << frame.lidar_timestamp << ','
+               << frame.recv_size << ','
                << frame.handle << ','
                << meta.lidar_ip << ','
                << meta.sn << ','
@@ -567,6 +576,7 @@ class PointCloudRecorder {
       for (uint32_t i = 0; i < packet->dot_num; ++i) {
         stream << frame.host_timestamp_ns << ','
                << frame.lidar_timestamp << ','
+               << frame.recv_size << ','
                << frame.handle << ','
                << meta.lidar_ip << ','
                << meta.sn << ','
@@ -635,12 +645,13 @@ void WorkModeCallback(livox_status status,
 void PointCloudCallback(uint32_t handle,
                         const uint8_t dev_type,
                         LivoxLidarEthernetPacket* data,
+                        uint32_t data_size,
                         void* client_data) {
   PointCloudRecorder* recorder = reinterpret_cast<PointCloudRecorder*>(client_data);
   if (recorder == nullptr || data == nullptr) {
     return;
   }
-  recorder->PushPointPacket(handle, dev_type, data);
+  recorder->PushPointPacket(handle, dev_type, data, data_size);
 }
 
 void LidarInfoChangeCallback(const uint32_t handle,
@@ -689,7 +700,7 @@ int main(int argc, const char* argv[]) {
     return -1;
   }
 
-  SetLivoxLidarPointCloudCallBack(PointCloudCallback, &recorder);
+  livox::lidar::DataHandler::GetInstance().SetRawPointDataCallback(PointCloudCallback, &recorder);
   SetLivoxLidarInfoChangeCallback(LidarInfoChangeCallback, &recorder);
 
   std::signal(SIGINT, StopSignalHandler);

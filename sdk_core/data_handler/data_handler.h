@@ -55,6 +55,7 @@ class DataHandler : public noncopyable {
   void RemovePointCloudObserver(uint16_t id);
 
   void SetPointDataCallback(const DataCallback& cb, void *client_data);
+  void SetRawPointDataCallback(const RawPointDataCallback& cb, void *client_data);
   void SetImuDataCallback(const DataCallback& cb, void* client_data);
 
  private:
@@ -62,6 +63,9 @@ class DataHandler : public noncopyable {
  private:
   DataCallback point_data_callbacks_;
   void* point_client_data_;
+
+  RawPointDataCallback raw_point_data_callback_;
+  void* raw_point_client_data_;
 
   DataCallback imu_data_callbacks_;
   void* imu_client_data_;

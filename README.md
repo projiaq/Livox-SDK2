@@ -239,8 +239,9 @@ Copy the config file '**Livox-SDK2\\samples\\multi_lidars_upgrade\\[config file]
 
 ## 3.4 Point cloud recorder sample
 
-The `point_cloud_recorder` sample saves point cloud data to both `bin` and `csv` files.
+The `point_cloud_recorder` sample saves the original UDP payload received on `point_data_port`.
 Each lidar creates one `bin` file and one `csv` file per minute under the specified output directory.
+The `bin` file stores the raw received packet bytes, and the `csv` file stores decoded point rows parsed from the same packet.
 
 ### in Ubuntu 20.04
 

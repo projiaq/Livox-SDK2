@@ -36,6 +36,8 @@ static const size_t kPrefixDataSize = 18;
 DataHandler::DataHandler()
     : point_data_callbacks_(nullptr),
       point_client_data_(nullptr),
+      raw_point_data_callback_(nullptr),
+      raw_point_client_data_(nullptr),
       imu_data_callbacks_(nullptr),
       imu_client_data_(nullptr) {
 }
@@ -53,6 +55,9 @@ bool DataHandler::Init() {
 void DataHandler::Destory() {
   point_data_callbacks_ = nullptr;
   point_client_data_ = nullptr;
+
+  raw_point_data_callback_ = nullptr;
+  raw_point_client_data_ = nullptr;
 
   imu_data_callbacks_ = nullptr;
   imu_client_data_ = nullptr;
@@ -77,6 +82,9 @@ void DataHandler::Handle(const uint8_t dev_type, const uint32_t handle, uint8_t 
       imu_data_callbacks_(handle, dev_type, lidar_data, imu_client_data_);
     }
   } else {  
+    if (raw_point_data_callback_) {
+      raw_point_data_callback_(handle, dev_type, lidar_data, buf_size, raw_point_client_data_);
+    }
     if (point_data_callbacks_) {
       point_data_callbacks_(handle, dev_type, lidar_data, point_client_data_);
     }
@@ -127,6 +135,11 @@ uint16_t DataHandler::GenerateObserverId() {
 void DataHandler::SetPointDataCallback(const DataCallback& cb, void *client_data) {
   point_data_callbacks_ = cb;
   point_client_data_ = client_data;
+}
+
+void DataHandler::SetRawPointDataCallback(const RawPointDataCallback& cb, void *client_data) {
+  raw_point_data_callback_ = cb;
+  raw_point_client_data_ = client_data;
 }
 
 void DataHandler::SetImuDataCallback(const DataCallback& cb, void* client_data) {

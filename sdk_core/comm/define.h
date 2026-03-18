@@ -265,6 +265,8 @@ enum class Flag : uint8_t {
 };
 
 using DataCallback = std::function<void(const uint32_t handle, const uint8_t dev_type, LivoxLidarEthernetPacket *data, void *client_data)>;
+using RawPointDataCallback = std::function<void(const uint32_t handle, const uint8_t dev_type,
+    LivoxLidarEthernetPacket *data, uint32_t data_size, void *client_data)>;
 using LidarInfoCallback = std::function<void(const uint32_t, const uint8_t, const char*, void*)>;
 
 typedef struct {
